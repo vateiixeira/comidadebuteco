@@ -79,17 +79,17 @@
           </div>
 
           <div v-if="precisaNome" class="mt-5 animate-fadeIn">
-            <label class="block font-display text-xs tracking-widest text-[#1a1410] mb-2">COMO TE CHAMAM?</label>
+            <label class="block font-display text-xs tracking-widest text-[#1a1410] mb-2">QUAL SEU APELIDO?</label>
             <input
               v-model="nomeInput"
               type="text"
-              placeholder="seu nome ou apelido"
+              placeholder="só apelido, sem nome real"
               class="w-full bg-transparent border-b-2 border-[#1a1410] py-2 text-xl font-handwritten focus:outline-none focus:border-[#c83c1f]"
               @keyup.enter="handleLogin"
               autofocus
             />
             <p class="text-xs text-[#8b6f47] mt-2 italic">
-              Primeira vez por aqui. Esse nome aparece pra você nas próximas vezes.
+              Primeira vez por aqui. Não use seu nome real — esse apelido fica visível pra qualquer um que abrir o app.
             </p>
           </div>
 

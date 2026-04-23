@@ -23,7 +23,14 @@ create index if not exists idx_avaliacoes_telefone on avaliacoes(telefone);
 -- ---------------------------------------------------------------------
 -- Row Level Security
 -- Habilitado com políticas abertas pra anon (acesso público sem login).
--- OK pra esse caso de 5 amigos compartilhando, NÃO use em produção real.
+--
+-- TRADE-OFF ACEITO: qualquer pessoa com a URL do app pode, via REST do
+-- Supabase, ler/criar/alterar/apagar avaliações em nome de qualquer
+-- telefone cadastrado. Não há prova de posse do número (sem OTP).
+-- OK pra esse caso de 5 amigos; NÃO use em produção real nem coloque
+-- nome verdadeiro no cadastro (a UI já avisa).
+-- Pra fechar de verdade: trocar pelo auth nativo do Supabase (OTP SMS)
+-- e amarrar as policies em auth.uid() / auth.jwt()->>'phone'.
 -- ---------------------------------------------------------------------
 alter table usuarios enable row level security;
 alter table avaliacoes enable row level security;
