@@ -1,0 +1,310 @@
+// =====================================================================
+// Comida di Buteco — App principal (Vue 3 sem build)
+// =====================================================================
+const { createApp, ref, computed, onMounted } = Vue;
+
+const sb = window.supabase.createClient(
+  window.CDB_CONFIG.SUPABASE_URL,
+  window.CDB_CONFIG.SUPABASE_ANON_KEY
+);
+
+const NOTA_LABELS = ['', 'fugiu...', 'meia boca', 'mais ou menos', 'muito bom!', 'trem da gota!'];
+
+function formatarTelefone(digits) {
+  const d = (digits || '').slice(0, 11);
+  if (!d) return '';
+  if (d.length < 3) return `(${d}`;
+  const ddd = d.slice(0, 2);
+  const rest = d.slice(2);
+  if (rest.length <= 5) return `(${ddd}) ${rest}`;
+  return `(${ddd}) ${rest.slice(0, 5)}-${rest.slice(5)}`;
+}
+
+function haversineM(aLat, aLng, bLat, bLng) {
+  const R = 6371000;
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const lat1 = toRad(aLat);
+  const lat2 = toRad(bLat);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function formatarDistancia(m) {
+  if (m == null || isNaN(m)) return '';
+  if (m < 1000) return `${Math.round(m)} m`;
+  return `${(m / 1000).toFixed(1).replace('.', ',')} km`;
+}
+
+createApp({
+  setup() {
+    // ----- estado -----
+    const dishes = window.CDB_DISHES;
+    const user = ref(null);
+    const ratings = ref({}); // { prato_id: {nota, obs, atualizado_em} }
+    const filtro = ref('faltam');
+    const aberto = ref(null);
+
+    const telefoneInput = ref(''); // guarda só dígitos
+    const nomeInput = ref('');
+    const precisaNome = ref(false);
+    const erroLogin = ref('');
+    const carregandoLogin = ref(false);
+    const carregandoApp = ref(true);
+
+    const notaInput = ref(0);
+    const obsInput = ref('');
+    const carregandoModal = ref(false);
+
+    const userLocation = ref(null); // {lat, lng} ou null
+    const obtendoLocal = ref(false);
+    const erroLocal = ref('');
+
+    // ----- computeds -----
+    const stats = computed(() => {
+      const visitados = Object.keys(ratings.value).length;
+      return {
+        visitados,
+        total: dishes.length,
+        faltam: dishes.length - visitados,
+        progresso: dishes.length ? (visitados / dishes.length) * 100 : 0,
+      };
+    });
+
+    const lista = computed(() => {
+      if (filtro.value === 'jafui') return dishes.filter(d => ratings.value[d.id]);
+      if (filtro.value === 'faltam') return dishes.filter(d => !ratings.value[d.id]);
+      if (filtro.value === 'perto' && userLocation.value) {
+        const { lat, lng } = userLocation.value;
+        return dishes
+          .map(d => ({ ...d, _dist: haversineM(lat, lng, d.lat, d.lng) }))
+          .sort((a, b) => a._dist - b._dist);
+      }
+      return dishes;
+    });
+
+    const notaLabel = computed(() => NOTA_LABELS[notaInput.value] || '');
+
+    const telefoneFormatado = computed(() => formatarTelefone(telefoneInput.value));
+
+    // ----- helpers -----
+    function telefoneValido(t) {
+      return /^\d{11}$/.test(t);
+    }
+
+    function handleTelefoneInput(ev) {
+      telefoneInput.value = ev.target.value.replace(/\D/g, '').slice(0, 11);
+      precisaNome.value = false;
+      erroLogin.value = '';
+    }
+
+    async function selecionarPerto() {
+      erroLocal.value = '';
+      if (userLocation.value) {
+        filtro.value = 'perto';
+        return;
+      }
+      if (!navigator.geolocation) {
+        erroLocal.value = 'Seu navegador não suporta geolocalização.';
+        return;
+      }
+      obtendoLocal.value = true;
+      try {
+        const pos = await new Promise((res, rej) => {
+          navigator.geolocation.getCurrentPosition(res, rej, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+          });
+        });
+        userLocation.value = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        filtro.value = 'perto';
+      } catch (e) {
+        if (e.code === 1) erroLocal.value = 'Libera a localização pra gente ordenar por distância.';
+        else if (e.code === 3) erroLocal.value = 'Demorou demais pra pegar sua localização.';
+        else erroLocal.value = 'Não rolou pegar sua localização.';
+      } finally {
+        obtendoLocal.value = false;
+      }
+    }
+
+    async function carregarRatings(telefone) {
+      const { data, error } = await sb
+        .from('avaliacoes')
+        .select('*')
+        .eq('telefone', telefone);
+      if (error) {
+        console.error('carregarRatings', error);
+        return;
+      }
+      const map = {};
+      for (const r of (data || [])) map[r.prato_id] = r;
+      ratings.value = map;
+    }
+
+    // ----- ações -----
+    async function handleLogin() {
+      erroLogin.value = '';
+      const telefone = telefoneInput.value;
+      if (!telefoneValido(telefone)) {
+        erroLogin.value = 'Celular inválido. Precisa ter DDD + 9 dígitos.';
+        return;
+      }
+      carregandoLogin.value = true;
+      try {
+        const { data: existente, error: errBusca } = await sb
+          .from('usuarios')
+          .select('*')
+          .eq('telefone', telefone)
+          .maybeSingle();
+
+        if (errBusca) throw errBusca;
+
+        if (existente) {
+          user.value = existente;
+          localStorage.setItem('cdb_telefone', telefone);
+          await carregarRatings(telefone);
+          carregandoLogin.value = false;
+          return;
+        }
+
+        if (!precisaNome.value) {
+          precisaNome.value = true;
+          carregandoLogin.value = false;
+          return;
+        }
+
+        if (nomeInput.value.trim().length < 2) {
+          erroLogin.value = 'Coloca seu nome aí, parceiro.';
+          carregandoLogin.value = false;
+          return;
+        }
+
+        const { data: novo, error: errInsert } = await sb
+          .from('usuarios')
+          .insert({ telefone, nome: nomeInput.value.trim() })
+          .select()
+          .single();
+
+        if (errInsert) throw errInsert;
+
+        user.value = novo;
+        localStorage.setItem('cdb_telefone', telefone);
+        carregandoLogin.value = false;
+      } catch (e) {
+        console.error(e);
+        erroLogin.value = 'Deu ruim: ' + (e.message || String(e));
+        carregandoLogin.value = false;
+      }
+    }
+
+    function handleLogout() {
+      localStorage.removeItem('cdb_telefone');
+      user.value = null;
+      ratings.value = {};
+      telefoneInput.value = '';
+      nomeInput.value = '';
+      precisaNome.value = false;
+      erroLogin.value = '';
+    }
+
+    function abrirModal(dish) {
+      aberto.value = dish;
+      const r = ratings.value[dish.id];
+      notaInput.value = r ? r.nota : 0;
+      obsInput.value = r ? (r.obs || '') : '';
+    }
+
+    function fecharModal() {
+      aberto.value = null;
+      notaInput.value = 0;
+      obsInput.value = '';
+    }
+
+    async function salvarRating() {
+      if (notaInput.value < 1) return;
+      carregandoModal.value = true;
+      const dados = {
+        telefone: user.value.telefone,
+        prato_id: aberto.value.id,
+        nota: notaInput.value,
+        obs: obsInput.value.trim(),
+        atualizado_em: new Date().toISOString(),
+      };
+      const { data, error } = await sb
+        .from('avaliacoes')
+        .upsert(dados, { onConflict: 'telefone,prato_id' })
+        .select()
+        .single();
+      if (error) {
+        alert('Falha ao salvar:\n' + error.message);
+        carregandoModal.value = false;
+        return;
+      }
+      ratings.value = { ...ratings.value, [aberto.value.id]: data };
+      fecharModal();
+      carregandoModal.value = false;
+    }
+
+    async function apagarRating() {
+      if (!confirm('Apagar essa avaliação?')) return;
+      carregandoModal.value = true;
+      const { error } = await sb
+        .from('avaliacoes')
+        .delete()
+        .eq('telefone', user.value.telefone)
+        .eq('prato_id', aberto.value.id);
+      if (error) {
+        alert('Falha ao apagar:\n' + error.message);
+        carregandoModal.value = false;
+        return;
+      }
+      const novo = { ...ratings.value };
+      delete novo[aberto.value.id];
+      ratings.value = novo;
+      fecharModal();
+      carregandoModal.value = false;
+    }
+
+    // ----- mount: tenta auto-login com telefone salvo no device -----
+    onMounted(async () => {
+      const telSalvo = localStorage.getItem('cdb_telefone');
+      if (!telSalvo) {
+        carregandoApp.value = false;
+        return;
+      }
+      try {
+        const { data, error } = await sb
+          .from('usuarios')
+          .select('*')
+          .eq('telefone', telSalvo)
+          .maybeSingle();
+        if (!error && data) {
+          user.value = data;
+          await carregarRatings(telSalvo);
+        }
+      } catch (e) {
+        console.error('auto-login falhou', e);
+      } finally {
+        carregandoApp.value = false;
+      }
+    });
+
+    return {
+      // state
+      user, ratings, filtro, aberto,
+      telefoneInput, nomeInput, precisaNome, erroLogin, carregandoLogin, carregandoApp,
+      notaInput, obsInput, carregandoModal,
+      userLocation, obtendoLocal, erroLocal,
+      // computed
+      stats, lista, notaLabel, telefoneFormatado,
+      // actions
+      handleLogin, handleLogout, handleTelefoneInput,
+      abrirModal, fecharModal, salvarRating, apagarRating,
+      selecionarPerto,
+      // helpers expostos
+      formatarDistancia,
+    };
+  },
+}).mount('#app');

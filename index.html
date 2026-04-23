@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#1a1410" />
+  <title>Comida di Buteco — MOC</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bungee&family=Caveat:wght@400;700&family=Lora:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .font-display { font-family: 'Bungee', cursive; }
+    .font-handwritten { font-family: 'Caveat', cursive; font-weight: 700; }
+    body { font-family: 'Lora', Georgia, serif; }
+
+    .paper-bg {
+      background-color: #f4ead5;
+      background-image:
+        radial-gradient(at 20% 10%, rgba(200, 60, 31, 0.06) 0px, transparent 50%),
+        radial-gradient(at 80% 90%, rgba(45, 74, 31, 0.05) 0px, transparent 50%),
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fadeIn { animation: fadeIn 0.25s ease-out; }
+
+    [v-cloak] { display: none; }
+  </style>
+</head>
+<body class="paper-bg">
+  <div id="app" v-cloak>
+
+    <!-- =========================================================
+         SPLASH (auto-login carregando)
+         ========================================================= -->
+    <div v-if="carregandoApp" class="min-h-screen flex items-center justify-center">
+      <svg class="animate-spin" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c83c1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+    </div>
+
+    <!-- =========================================================
+         LOGIN
+         ========================================================= -->
+    <div v-else-if="!user" class="min-h-screen flex items-center justify-center px-5 py-10">
+      <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+          <div class="inline-block px-4 py-2 bg-[#c83c1f] text-[#f4ead5] mb-4 -rotate-2 shadow-lg">
+            <span class="font-display text-xs tracking-[0.3em]">MONTES CLAROS / MG</span>
+          </div>
+          <h1 class="font-display text-5xl leading-[0.9] text-[#1a1410] mb-2">
+            COMIDA<br /><span class="text-[#c83c1f]">DI BUTECO</span>
+          </h1>
+          <p class="font-handwritten text-2xl text-[#5c4a2f] -rotate-1 mt-3">
+            seu caderninho de avaliações
+          </p>
+        </div>
+
+        <div class="bg-[#fffaee] border-2 border-[#1a1410] p-6 shadow-[6px_6px_0_#1a1410]">
+          <label class="block font-display text-xs tracking-widest text-[#1a1410] mb-2">CELULAR</label>
+          <div class="flex items-end gap-2">
+            <span class="font-handwritten text-2xl text-[#5c4a2f] pb-1 select-none">+55</span>
+            <input
+              :value="telefoneFormatado"
+              @input="handleTelefoneInput($event)"
+              type="tel"
+              inputmode="numeric"
+              placeholder="(31) 99999-9999"
+              class="flex-1 bg-transparent border-b-2 border-[#1a1410] py-2 text-xl focus:outline-none focus:border-[#c83c1f]"
+              autocomplete="tel-national"
+              @keyup.enter="handleLogin"
+            />
+          </div>
+
+          <div v-if="precisaNome" class="mt-5 animate-fadeIn">
+            <label class="block font-display text-xs tracking-widest text-[#1a1410] mb-2">COMO TE CHAMAM?</label>
+            <input
+              v-model="nomeInput"
+              type="text"
+              placeholder="seu nome ou apelido"
+              class="w-full bg-transparent border-b-2 border-[#1a1410] py-2 text-xl font-handwritten focus:outline-none focus:border-[#c83c1f]"
+              @keyup.enter="handleLogin"
+              autofocus
+            />
+            <p class="text-xs text-[#8b6f47] mt-2 italic">
+              Primeira vez por aqui. Esse nome aparece pra você nas próximas vezes.
+            </p>
+          </div>
+
+          <p v-if="erroLogin" class="mt-4 text-sm text-[#c83c1f] font-handwritten text-lg">
+            ⚠ {{ erroLogin }}
+          </p>
+
+          <button
+            @click="handleLogin"
+            :disabled="carregandoLogin"
+            class="mt-6 w-full bg-[#1a1410] text-[#f4b942] py-4 font-display tracking-[0.2em] text-sm hover:bg-[#c83c1f] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            <svg v-if="carregandoLogin" class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+            <span>{{ precisaNome ? 'CRIAR E ENTRAR' : 'ENTRAR' }}</span>
+          </button>
+        </div>
+
+        <p class="text-center mt-6 font-handwritten text-[#5c4a2f] text-base px-4">
+          Sem senha. Sem app. Só celular, prato e nota de 1 a 5.
+        </p>
+      </div>
+    </div>
+
+    <!-- =========================================================
+         APP PRINCIPAL
+         ========================================================= -->
+    <div v-else>
+      <header class="bg-[#1a1410] text-[#f4ead5] px-4 py-3 sticky top-0 z-30 border-b-4 border-[#c83c1f]">
+        <div class="max-w-2xl mx-auto flex items-center justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-display text-[10px] tracking-[0.25em] text-[#f4b942]">COMIDA DI BUTECO • MOC</p>
+            <p class="font-handwritten text-xl truncate">salve, {{ user.nome.split(' ')[0] }}!</p>
+          </div>
+          <button
+            @click="handleLogout"
+            class="flex items-center gap-1.5 text-xs font-display tracking-widest hover:text-[#f4b942] transition-colors flex-shrink-0"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" x2="9" y1="12" y2="12" />
+            </svg>
+            SAIR
+          </button>
+        </div>
+      </header>
+
+      <div class="max-w-2xl mx-auto px-4 py-5">
+        <!-- Stats card -->
+        <div class="bg-[#c83c1f] text-[#fffaee] p-5 mb-5 border-2 border-[#1a1410] shadow-[5px_5px_0_#1a1410] relative overflow-hidden">
+          <div class="absolute -top-2 -right-2 bg-[#f4b942] text-[#1a1410] px-3 py-1 rotate-12 font-display text-[10px] tracking-widest">
+            ED. 2026
+          </div>
+          <div>
+            <p class="font-display text-[10px] tracking-[0.3em] opacity-80">VOCÊ JÁ FOI EM</p>
+            <p class="font-display text-6xl leading-none mt-1">
+              {{ stats.visitados }}<span class="text-2xl opacity-70">/{{ stats.total }}</span>
+            </p>
+            <p class="font-handwritten text-2xl -rotate-1 mt-1">
+              {{ stats.faltam === 0 ? 'fechou tudo, mestre!' : `faltam ${stats.faltam} botecos` }}
+            </p>
+          </div>
+          <div class="mt-4 h-2 bg-[#1a1410]/30 relative">
+            <div class="h-full bg-[#f4b942] transition-all duration-500" :style="{ width: stats.progresso + '%' }"></div>
+          </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="sticky top-[60px] z-20 bg-[#f4ead5]/95 backdrop-blur-sm py-2 -mx-4 px-4 mb-4">
+          <div class="grid grid-cols-4 gap-2">
+            <button
+              @click="filtro = 'faltam'"
+              :class="filtro === 'faltam' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
+              class="py-2 px-1 font-display text-[10px] sm:text-[11px] tracking-widest border-2 border-[#1a1410] transition-all"
+            >
+              FALTAM <span class="opacity-70">({{ stats.faltam }})</span>
+            </button>
+            <button
+              @click="filtro = 'jafui'"
+              :class="filtro === 'jafui' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
+              class="py-2 px-1 font-display text-[10px] sm:text-[11px] tracking-widest border-2 border-[#1a1410] transition-all"
+            >
+              JÁ FUI <span class="opacity-70">({{ stats.visitados }})</span>
+            </button>
+            <button
+              @click="selecionarPerto"
+              :disabled="obtendoLocal"
+              :class="filtro === 'perto' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
+              class="py-2 px-1 font-display text-[10px] sm:text-[11px] tracking-widest border-2 border-[#1a1410] transition-all flex items-center justify-center gap-1 disabled:opacity-50"
+            >
+              <svg v-if="obtendoLocal" class="animate-spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              <svg v-else width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>PERTO</span>
+            </button>
+            <button
+              @click="filtro = 'todos'"
+              :class="filtro === 'todos' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
+              class="py-2 px-1 font-display text-[10px] sm:text-[11px] tracking-widest border-2 border-[#1a1410] transition-all"
+            >
+              TODOS <span class="opacity-70">({{ stats.total }})</span>
+            </button>
+          </div>
+          <p v-if="erroLocal" class="text-xs text-[#c83c1f] font-handwritten text-base mt-2 -rotate-1">
+            ⚠ {{ erroLocal }}
+          </p>
+        </div>
+
+        <!-- Lista -->
+        <div v-if="lista.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8b6f47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto">
+            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+          </svg>
+          <p class="font-handwritten text-2xl text-[#5c4a2f] mt-3 -rotate-1">
+            {{ filtro === 'jafui' ? 'ainda não rolou nenhum' : 'fechou todos! 🍻' }}
+          </p>
+        </div>
+
+        <div v-else class="space-y-3">
+          <button
+            v-for="d in lista"
+            :key="d.id"
+            @click="abrirModal(d)"
+            class="block w-full text-left bg-[#fffaee] border-2 border-[#1a1410] shadow-[4px_4px_0_#1a1410] hover:shadow-[6px_6px_0_#1a1410] hover:-translate-x-0.5 hover:-translate-y-0.5 active:shadow-[2px_2px_0_#1a1410] active:translate-x-0.5 active:translate-y-0.5 transition-all relative overflow-hidden"
+          >
+            <div v-if="ratings[d.id]" class="absolute top-3 right-3 z-10 bg-[#2d4a1f] text-[#f4ead5] px-3 py-1 -rotate-6 shadow-md">
+              <div class="flex items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span class="font-display text-[10px] tracking-widest">JÁ FUI</span>
+              </div>
+            </div>
+            <div v-if="d._dist != null" class="absolute bottom-3 right-3 z-10 bg-[#f4b942] text-[#1a1410] px-2.5 py-1 rotate-3 shadow-md border border-[#1a1410]">
+              <span class="font-display text-[10px] tracking-widest">{{ formatarDistancia(d._dist) }}</span>
+            </div>
+            <div class="flex">
+              <div class="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 bg-[#1a1410] overflow-hidden">
+                <img
+                  :src="d.foto"
+                  :alt="d.prato"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                  :class="ratings[d.id] ? '' : 'grayscale-[40%] contrast-105'"
+                  @error="$event.target.style.display='none'"
+                />
+                <div v-if="!ratings[d.id]" class="absolute inset-0 bg-[#1a1410]/15"></div>
+              </div>
+              <div class="flex-1 p-3 sm:p-4 min-w-0">
+                <h3 class="font-display text-sm sm:text-base leading-tight text-[#1a1410] truncate">{{ d.boteco }}</h3>
+                <p class="font-handwritten text-lg sm:text-xl text-[#c83c1f] leading-tight mt-0.5">{{ d.prato }}</p>
+                <div class="flex items-start gap-1 mt-2 text-[#5c4a2f]">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0">
+                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                    <circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span class="text-[11px] sm:text-xs leading-tight">{{ d.endereco }}</span>
+                </div>
+                <div class="mt-2 sm:mt-3">
+                  <div v-if="ratings[d.id]" class="flex gap-1">
+                    <svg
+                      v-for="n in 5"
+                      :key="n"
+                      width="16" height="16" viewBox="0 0 24 24"
+                      :fill="ratings[d.id].nota >= n ? '#f4b942' : 'none'"
+                      :stroke="ratings[d.id].nota >= n ? '#c4901f' : '#8b6f47'"
+                      stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    >
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  </div>
+                  <span v-else class="text-[11px] sm:text-xs font-display tracking-widest text-[#8b6f47] uppercase">
+                    Toque pra avaliar →
+                  </span>
+                </div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        <p class="text-center mt-8 font-handwritten text-[#8b6f47] text-sm px-4 leading-relaxed">
+          * suas avaliações ficam salvas online.<br />
+          entre com o mesmo email de qualquer dispositivo pra continuar.
+        </p>
+      </div>
+
+      <!-- =========================================================
+           MODAL DE AVALIAÇÃO
+           ========================================================= -->
+      <div v-if="aberto" class="fixed inset-0 z-50 bg-[#1a1410]/80 flex items-end sm:items-center justify-center p-0 sm:p-5 animate-fadeIn" @click.self="fecharModal">
+        <div class="bg-[#fffaee] w-full sm:max-w-md max-h-[95vh] overflow-y-auto border-2 border-[#1a1410] shadow-[8px_8px_0_#c83c1f] relative">
+          <button
+            @click="fecharModal"
+            class="absolute top-3 right-3 z-10 w-9 h-9 bg-[#1a1410] text-[#f4ead5] flex items-center justify-center hover:bg-[#c83c1f] transition-colors"
+            aria-label="Fechar"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+            </svg>
+          </button>
+
+          <img
+            :src="aberto.foto"
+            :alt="aberto.prato"
+            class="w-full h-56 object-cover bg-[#1a1410]"
+            @error="$event.target.style.display='none'"
+          />
+
+          <div class="p-5">
+            <h2 class="font-display text-2xl text-[#1a1410] leading-tight">{{ aberto.boteco }}</h2>
+            <p class="font-handwritten text-3xl text-[#c83c1f] leading-tight mt-1 -rotate-1">{{ aberto.prato }}</p>
+            <p class="text-sm text-[#3d2f20] mt-3 leading-relaxed">{{ aberto.descricao }}</p>
+            <a
+              :href="aberto.mapsUrl"
+              target="_blank"
+              rel="noopener"
+              class="flex items-center gap-2 mt-3 text-[#5c4a2f] hover:text-[#c83c1f] transition-colors group"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0">
+                <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span class="text-xs leading-tight flex-1">{{ aberto.endereco }}</span>
+              <span class="font-display text-[9px] tracking-widest text-[#c83c1f] opacity-70 group-hover:opacity-100 whitespace-nowrap">MAPA ↗</span>
+            </a>
+
+            <div class="mt-6 pt-5 border-t-2 border-dashed border-[#8b6f47]">
+              <p class="font-display text-xs tracking-widest text-[#1a1410] mb-3 text-center">SUA NOTA</p>
+              <div class="flex justify-center gap-1">
+                <button
+                  v-for="n in 5"
+                  :key="n"
+                  type="button"
+                  @click="notaInput = n"
+                  class="transition-transform hover:scale-125 active:scale-110"
+                >
+                  <svg
+                    width="36" height="36" viewBox="0 0 24 24"
+                    :fill="notaInput >= n ? '#f4b942' : 'none'"
+                    :stroke="notaInput >= n ? '#c4901f' : '#8b6f47'"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  >
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </button>
+              </div>
+              <p v-if="notaInput > 0" class="text-center font-handwritten text-2xl text-[#c83c1f] mt-2 -rotate-1">
+                {{ notaLabel }}
+              </p>
+
+              <label class="block font-display text-xs tracking-widest text-[#1a1410] mt-5 mb-2">
+                ANOTAÇÕES (opcional)
+              </label>
+              <textarea
+                v-model="obsInput"
+                rows="3"
+                placeholder="cerveja gelada? atendimento? aquele detalhe que você quer lembrar..."
+                class="w-full bg-transparent border-2 border-[#1a1410] p-2 text-lg font-handwritten focus:outline-none focus:border-[#c83c1f] resize-none"
+              ></textarea>
+            </div>
+
+            <button
+              @click="salvarRating"
+              :disabled="notaInput < 1 || carregandoModal"
+              class="mt-5 w-full bg-[#1a1410] text-[#f4b942] py-4 font-display tracking-[0.2em] text-sm hover:bg-[#c83c1f] transition-colors disabled:opacity-40 flex items-center justify-center gap-2"
+            >
+              <svg v-if="carregandoModal" class="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+              </svg>
+              <span>{{ ratings[aberto.id] ? 'ATUALIZAR' : 'SALVAR AVALIAÇÃO' }}</span>
+            </button>
+
+            <button
+              v-if="ratings[aberto.id]"
+              @click="apagarRating"
+              :disabled="carregandoModal"
+              class="mt-2 w-full text-[#c83c1f] py-2 text-sm font-display tracking-widest hover:text-[#1a1410] transition-colors flex items-center justify-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+              </svg>
+              APAGAR AVALIAÇÃO
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================= -->
+  <!--  Bibliotecas                                                -->
+  <!-- ========================================================= -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Config + dados + app (nessa ordem) -->
+  <script src="config.js"></script>
+  <script src="dishes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
