@@ -192,11 +192,11 @@
               <span>PERTO</span>
             </button>
             <button
-              @click="filtro = 'todos'"
-              :class="filtro === 'todos' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
+              @click="filtro = 'galera'"
+              :class="filtro === 'galera' ? 'bg-[#1a1410] text-[#f4b942] shadow-[3px_3px_0_#c83c1f]' : 'bg-[#fffaee] text-[#1a1410] hover:bg-[#f4b942]'"
               class="py-2 px-1 font-display text-[10px] sm:text-[11px] tracking-widest border-2 border-[#1a1410] transition-all"
             >
-              TODOS <span class="opacity-70">({{ stats.total }})</span>
+              GALERA
             </button>
           </div>
           <p v-if="erroLocal" class="text-xs text-[#c83c1f] font-handwritten text-base mt-2 -rotate-1">
