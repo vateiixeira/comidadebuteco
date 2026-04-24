@@ -62,7 +62,7 @@ URL final: `https://SEU_USER.github.io/comida-di-buteco-moc/`
 - Usuário entra com celular (DDD + 9 dígitos, país fixo +55)
 - Se for primeira vez, pede o nome e cria registro em `usuarios`
 - Carrega todas as avaliações daquele telefone
-- Lista mostra: faltam / já fui / todos com filtro
+- Lista mostra: faltam / já fui / perto / galera (feed das últimas avaliações de todo mundo)
 - Toca num card → modal com 5 estrelas e campo de observação
 - Salvar faz `upsert` em `avaliacoes`
 
