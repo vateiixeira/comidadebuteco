@@ -134,10 +134,6 @@ createApp({
 
     async function selecionarPerto() {
       erroLocal.value = '';
-      if (userLocation.value) {
-        filtro.value = 'perto';
-        return;
-      }
       if (!navigator.geolocation) {
         erroLocal.value = 'Seu navegador não suporta geolocalização.';
         return;
@@ -148,7 +144,7 @@ createApp({
           navigator.geolocation.getCurrentPosition(res, rej, {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 60000,
+            maximumAge: 0,
           });
         });
         userLocation.value = { lat: pos.coords.latitude, lng: pos.coords.longitude };
