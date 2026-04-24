@@ -206,7 +206,25 @@
 
         <!-- Feed da galera -->
         <div v-if="filtro === 'galera'">
-          <div v-if="feedEnriquecido.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
+          <!-- Carregando -->
+          <div v-if="carregandoFeed" class="flex justify-center py-12">
+            <svg class="animate-spin" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c83c1f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+            </svg>
+          </div>
+
+          <!-- Erro -->
+          <div v-else-if="erroFeed" class="text-center py-10 bg-[#fffaee] border-2 border-dashed border-[#c83c1f]">
+            <p class="font-handwritten text-xl text-[#c83c1f] -rotate-1 mb-3">⚠ {{ erroFeed }}</p>
+            <button
+              @click="carregarFeed"
+              class="bg-[#1a1410] text-[#f4b942] py-2 px-5 font-display tracking-widest text-xs hover:bg-[#c83c1f] transition-colors"
+            >
+              TENTAR DE NOVO
+            </button>
+          </div>
+
+          <div v-else-if="feedEnriquecido.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
             <p class="font-handwritten text-2xl text-[#5c4a2f] -rotate-1">
               ninguém avaliou nada ainda. bora começar a correria?
             </p>
