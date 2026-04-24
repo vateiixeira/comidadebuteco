@@ -204,76 +204,128 @@
           </p>
         </div>
 
-        <!-- Lista -->
-        <div v-if="lista.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8b6f47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto">
-            <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
-          </svg>
-          <p class="font-handwritten text-2xl text-[#5c4a2f] mt-3 -rotate-1">
-            {{ filtro === 'jafui' ? 'ainda não rolou nenhum' : 'fechou todos! 🍻' }}
-          </p>
-        </div>
+        <!-- Feed da galera -->
+        <div v-if="filtro === 'galera'">
+          <div v-if="feedEnriquecido.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
+            <p class="font-handwritten text-2xl text-[#5c4a2f] -rotate-1">
+              ninguém avaliou nada ainda. bora começar a correria?
+            </p>
+          </div>
 
-        <div v-else class="space-y-3">
-          <button
-            v-for="d in lista"
-            :key="d.id"
-            @click="abrirModal(d)"
-            class="block w-full text-left bg-[#fffaee] border-2 border-[#1a1410] shadow-[4px_4px_0_#1a1410] hover:shadow-[6px_6px_0_#1a1410] hover:-translate-x-0.5 hover:-translate-y-0.5 active:shadow-[2px_2px_0_#1a1410] active:translate-x-0.5 active:translate-y-0.5 transition-all relative overflow-hidden"
-          >
-            <div v-if="ratings[d.id]" class="absolute top-3 right-3 z-10 bg-[#2d4a1f] text-[#f4ead5] px-3 py-1 -rotate-6 shadow-md">
-              <div class="flex items-center gap-1">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-                <span class="font-display text-[10px] tracking-widest">JÁ FUI</span>
-              </div>
-            </div>
-            <div v-if="d._dist != null" class="absolute bottom-3 right-3 z-10 bg-[#f4b942] text-[#1a1410] px-2.5 py-1 rotate-3 shadow-md border border-[#1a1410]">
-              <span class="font-display text-[10px] tracking-widest">{{ formatarDistancia(d._dist) }}</span>
-            </div>
-            <div class="flex">
-              <div class="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 bg-[#1a1410] overflow-hidden">
+          <div v-else class="space-y-3">
+            <div
+              v-for="(a, i) in feedEnriquecido"
+              :key="a.telefone + '-' + a.prato_id + '-' + i"
+              class="bg-[#fffaee] border-2 border-[#1a1410] shadow-[4px_4px_0_#1a1410] flex"
+            >
+              <div class="relative w-20 h-20 flex-shrink-0 bg-[#1a1410] overflow-hidden">
                 <img
-                  :src="d.foto"
-                  :alt="d.prato"
+                  :src="a.foto"
+                  :alt="a.prato"
                   loading="lazy"
                   class="w-full h-full object-cover"
-                  :class="ratings[d.id] ? '' : 'grayscale-[40%] contrast-105'"
                   @error="$event.target.style.display='none'"
                 />
-                <div v-if="!ratings[d.id]" class="absolute inset-0 bg-[#1a1410]/15"></div>
               </div>
-              <div class="flex-1 p-3 sm:p-4 min-w-0">
-                <h3 class="font-display text-sm sm:text-base leading-tight text-[#1a1410] truncate">{{ d.boteco }}</h3>
-                <p class="font-handwritten text-lg sm:text-xl text-[#c83c1f] leading-tight mt-0.5">{{ d.prato }}</p>
-                <div class="flex items-start gap-1 mt-2 text-[#5c4a2f]">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0">
-                    <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-                    <circle cx="12" cy="10" r="3" />
-                  </svg>
-                  <span class="text-[11px] sm:text-xs leading-tight">{{ d.endereco }}</span>
-                </div>
-                <div class="mt-2 sm:mt-3">
-                  <div v-if="ratings[d.id]" class="flex gap-1">
+              <div class="flex-1 p-3 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-display text-xs tracking-widest text-[#1a1410] truncate">{{ a.nome }}</span>
+                  <div class="flex gap-0.5 flex-shrink-0">
                     <svg
                       v-for="n in 5"
                       :key="n"
-                      width="16" height="16" viewBox="0 0 24 24"
-                      :fill="ratings[d.id].nota >= n ? '#f4b942' : 'none'"
-                      :stroke="ratings[d.id].nota >= n ? '#c4901f' : '#8b6f47'"
+                      width="14" height="14" viewBox="0 0 24 24"
+                      :fill="a.nota >= n ? '#f4b942' : 'none'"
+                      :stroke="a.nota >= n ? '#c4901f' : '#8b6f47'"
                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                     >
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                     </svg>
                   </div>
-                  <span v-else class="text-[11px] sm:text-xs font-display tracking-widest text-[#8b6f47] uppercase">
-                    Toque pra avaliar →
-                  </span>
                 </div>
+                <p class="font-handwritten text-lg text-[#c83c1f] leading-tight truncate">{{ a.prato }}</p>
+                <p class="text-[11px] text-[#5c4a2f] leading-tight truncate">
+                  {{ a.boteco }} · <span class="font-display tracking-widest text-[10px] text-[#8b6f47]">{{ a.tempoRel }}</span>
+                </p>
+                <p v-if="a.obs" class="font-handwritten text-base text-[#3d2f20] mt-1 line-clamp-2">"{{ a.obs }}"</p>
               </div>
             </div>
-          </button>
+          </div>
+        </div>
+
+        <!-- Lista de botecos (abas faltam / jafui / perto) -->
+        <div v-if="filtro !== 'galera'">
+          <!-- Lista -->
+          <div v-if="lista.length === 0" class="text-center py-12 bg-[#fffaee] border-2 border-dashed border-[#8b6f47]">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#8b6f47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mx-auto">
+              <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+            </svg>
+            <p class="font-handwritten text-2xl text-[#5c4a2f] mt-3 -rotate-1">
+              {{ filtro === 'jafui' ? 'ainda não rolou nenhum' : 'fechou todos! 🍻' }}
+            </p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <button
+              v-for="d in lista"
+              :key="d.id"
+              @click="abrirModal(d)"
+              class="block w-full text-left bg-[#fffaee] border-2 border-[#1a1410] shadow-[4px_4px_0_#1a1410] hover:shadow-[6px_6px_0_#1a1410] hover:-translate-x-0.5 hover:-translate-y-0.5 active:shadow-[2px_2px_0_#1a1410] active:translate-x-0.5 active:translate-y-0.5 transition-all relative overflow-hidden"
+            >
+              <div v-if="ratings[d.id]" class="absolute top-3 right-3 z-10 bg-[#2d4a1f] text-[#f4ead5] px-3 py-1 -rotate-6 shadow-md">
+                <div class="flex items-center gap-1">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                  <span class="font-display text-[10px] tracking-widest">JÁ FUI</span>
+                </div>
+              </div>
+              <div v-if="d._dist != null" class="absolute bottom-3 right-3 z-10 bg-[#f4b942] text-[#1a1410] px-2.5 py-1 rotate-3 shadow-md border border-[#1a1410]">
+                <span class="font-display text-[10px] tracking-widest">{{ formatarDistancia(d._dist) }}</span>
+              </div>
+              <div class="flex">
+                <div class="relative w-32 h-32 sm:w-40 sm:h-40 flex-shrink-0 bg-[#1a1410] overflow-hidden">
+                  <img
+                    :src="d.foto"
+                    :alt="d.prato"
+                    loading="lazy"
+                    class="w-full h-full object-cover"
+                    :class="ratings[d.id] ? '' : 'grayscale-[40%] contrast-105'"
+                    @error="$event.target.style.display='none'"
+                  />
+                  <div v-if="!ratings[d.id]" class="absolute inset-0 bg-[#1a1410]/15"></div>
+                </div>
+                <div class="flex-1 p-3 sm:p-4 min-w-0">
+                  <h3 class="font-display text-sm sm:text-base leading-tight text-[#1a1410] truncate">{{ d.boteco }}</h3>
+                  <p class="font-handwritten text-lg sm:text-xl text-[#c83c1f] leading-tight mt-0.5">{{ d.prato }}</p>
+                  <div class="flex items-start gap-1 mt-2 text-[#5c4a2f]">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 flex-shrink-0">
+                      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    <span class="text-[11px] sm:text-xs leading-tight">{{ d.endereco }}</span>
+                  </div>
+                  <div class="mt-2 sm:mt-3">
+                    <div v-if="ratings[d.id]" class="flex gap-1">
+                      <svg
+                        v-for="n in 5"
+                        :key="n"
+                        width="16" height="16" viewBox="0 0 24 24"
+                        :fill="ratings[d.id].nota >= n ? '#f4b942' : 'none'"
+                        :stroke="ratings[d.id].nota >= n ? '#c4901f' : '#8b6f47'"
+                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                      >
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      </svg>
+                    </div>
+                    <span v-else class="text-[11px] sm:text-xs font-display tracking-widest text-[#8b6f47] uppercase">
+                      Toque pra avaliar →
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </button>
+          </div>
         </div>
 
         <p class="text-center mt-8 font-handwritten text-[#8b6f47] text-sm px-4 leading-relaxed">

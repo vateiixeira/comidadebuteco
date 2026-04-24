@@ -103,6 +103,20 @@ createApp({
       return dishes;
     });
 
+    const feedEnriquecido = computed(() =>
+      feedAvaliacoes.value.map(a => {
+        const d = dishById.get(a.prato_id);
+        return {
+          ...a,
+          nome: a.usuarios?.nome || 'alguém',
+          prato: d?.prato || '',
+          boteco: d?.boteco || '',
+          foto: d?.foto || '',
+          tempoRel: formatarTempoRelativo(a.atualizado_em),
+        };
+      })
+    );
+
     const notaLabel = computed(() => NOTA_LABELS[notaInput.value] || '');
 
     const telefoneFormatado = computed(() => formatarTelefone(telefoneInput.value));
@@ -341,7 +355,7 @@ createApp({
       userLocation, obtendoLocal, erroLocal,
       feedAvaliacoes, carregandoFeed, erroFeed,
       // computed
-      stats, lista, notaLabel, telefoneFormatado,
+      stats, lista, feedEnriquecido, notaLabel, telefoneFormatado,
       // actions
       handleLogin, handleLogout, handleTelefoneInput,
       abrirModal, fecharModal, salvarRating, apagarRating,
