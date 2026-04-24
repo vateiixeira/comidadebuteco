@@ -79,6 +79,7 @@ createApp({
     const feedAvaliacoes = ref([]);
     const carregandoFeed = ref(false);
     const erroFeed = ref('');
+    const agregadosAvaliacoes = ref([]);
 
     // ----- computeds -----
     const stats = computed(() => {
@@ -116,6 +117,21 @@ createApp({
         };
       })
     );
+
+    const mediasPorPrato = computed(() => {
+      const acc = new Map();
+      for (const a of agregadosAvaliacoes.value) {
+        const cur = acc.get(a.prato_id) || { soma: 0, contagem: 0 };
+        cur.soma += a.nota;
+        cur.contagem += 1;
+        acc.set(a.prato_id, cur);
+      }
+      const saida = new Map();
+      for (const [id, { soma, contagem }] of acc) {
+        saida.set(id, { media: soma / contagem, contagem });
+      }
+      return saida;
+    });
 
     const notaLabel = computed(() => NOTA_LABELS[notaInput.value] || '');
 
@@ -174,6 +190,17 @@ createApp({
       } finally {
         carregandoFeed.value = false;
       }
+    }
+
+    async function carregarAgregados() {
+      const { data, error } = await sb
+        .from('avaliacoes')
+        .select('prato_id, nota');
+      if (error) {
+        console.error('carregarAgregados', error);
+        return;
+      }
+      agregadosAvaliacoes.value = data || [];
     }
 
     function selecionarGalera() {
@@ -321,6 +348,7 @@ createApp({
 
     // ----- mount: tenta auto-login com telefone salvo no device -----
     onMounted(async () => {
+      carregarAgregados();
       const telSalvo = localStorage.getItem('cdb_telefone');
       if (!telSalvo) {
         carregandoApp.value = false;
@@ -349,9 +377,9 @@ createApp({
       telefoneInput, nomeInput, precisaNome, erroLogin, carregandoLogin, carregandoApp,
       notaInput, obsInput, carregandoModal,
       userLocation, obtendoLocal, erroLocal,
-      feedAvaliacoes, carregandoFeed, erroFeed,
+      feedAvaliacoes, carregandoFeed, erroFeed, agregadosAvaliacoes,
       // computed
-      stats, lista, feedEnriquecido, notaLabel, telefoneFormatado,
+      stats, lista, feedEnriquecido, mediasPorPrato, notaLabel, telefoneFormatado,
       // actions
       handleLogin, handleLogout, handleTelefoneInput,
       abrirModal, fecharModal, salvarRating, apagarRating,
