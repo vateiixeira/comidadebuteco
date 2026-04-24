@@ -94,7 +94,15 @@ createApp({
 
     const lista = computed(() => {
       if (filtro.value === 'jafui') return dishes.filter(d => ratings.value[d.id]);
-      if (filtro.value === 'faltam') return dishes.filter(d => !ratings.value[d.id]);
+      if (filtro.value === 'faltam') {
+        return dishes
+          .filter(d => !ratings.value[d.id])
+          .sort((a, b) => {
+            const ma = mediasPorPrato.value.get(a.id)?.media ?? -1;
+            const mb = mediasPorPrato.value.get(b.id)?.media ?? -1;
+            return mb - ma;
+          });
+      }
       if (filtro.value === 'perto' && userLocation.value) {
         const { lat, lng } = userLocation.value;
         return dishes
