@@ -76,6 +76,10 @@ createApp({
     const obtendoLocal = ref(false);
     const erroLocal = ref('');
 
+    const feedAvaliacoes = ref([]);
+    const carregandoFeed = ref(false);
+    const erroFeed = ref('');
+
     // ----- computeds -----
     const stats = computed(() => {
       const visitados = Object.keys(ratings.value).length;
@@ -142,6 +146,29 @@ createApp({
       } finally {
         obtendoLocal.value = false;
       }
+    }
+
+    async function carregarFeed() {
+      carregandoFeed.value = true;
+      erroFeed.value = '';
+      try {
+        const { data, error } = await sb
+          .from('avaliacoes')
+          .select('telefone, prato_id, nota, obs, atualizado_em, usuarios(nome)')
+          .order('atualizado_em', { ascending: false });
+        if (error) throw error;
+        feedAvaliacoes.value = data || [];
+      } catch (e) {
+        console.error('carregarFeed', e);
+        erroFeed.value = 'Deu ruim ao carregar. Tenta de novo.';
+      } finally {
+        carregandoFeed.value = false;
+      }
+    }
+
+    function selecionarGalera() {
+      filtro.value = 'galera';
+      carregarFeed();
     }
 
     async function carregarRatings(telefone) {
@@ -312,12 +339,14 @@ createApp({
       telefoneInput, nomeInput, precisaNome, erroLogin, carregandoLogin, carregandoApp,
       notaInput, obsInput, carregandoModal,
       userLocation, obtendoLocal, erroLocal,
+      feedAvaliacoes, carregandoFeed, erroFeed,
       // computed
       stats, lista, notaLabel, telefoneFormatado,
       // actions
       handleLogin, handleLogout, handleTelefoneInput,
       abrirModal, fecharModal, salvarRating, apagarRating,
       selecionarPerto,
+      carregarFeed, selecionarGalera,
       // helpers expostos
       formatarDistancia,
     };
