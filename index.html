@@ -247,7 +247,7 @@
               </div>
               <div class="flex-1 p-3 min-w-0">
                 <div class="flex items-center gap-2">
-                  <span class="font-display text-xs tracking-widest text-[#1a1410] truncate">{{ a.nome }}</span>
+                  <span class="font-display text-xs tracking-widest text-[#1a1410] flex-shrink-0">{{ a.nome }}</span>
                   <div class="flex gap-0.5 flex-shrink-0">
                     <svg
                       v-for="n in 5"
@@ -260,11 +260,10 @@
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                     </svg>
                   </div>
+                  <span class="font-display text-[11px] tracking-widest uppercase text-[#8b6f47] truncate">{{ a.boteco }}</span>
                 </div>
                 <p class="font-handwritten text-lg text-[#c83c1f] leading-tight truncate">{{ a.prato }}</p>
-                <p class="text-[11px] text-[#5c4a2f] leading-tight truncate">
-                  {{ a.boteco }} · <span class="font-display tracking-widest text-[10px] text-[#8b6f47]">{{ a.tempoRel }}</span>
-                </p>
+                <p class="font-display tracking-widest text-[10px] text-[#8b6f47]">{{ a.tempoRel }}</p>
                 <p v-if="a.obs" class="font-handwritten text-base text-[#3d2f20] mt-1 line-clamp-2">"{{ a.obs }}"</p>
               </div>
             </div>

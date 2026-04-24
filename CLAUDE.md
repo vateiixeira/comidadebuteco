@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Static single-page Vue 3 app for tracking visits to the 20 botecos of **Comida di Buteco MOC 2026** (Montes Claros / MG). Deployed to GitHub Pages, backed by Supabase. UI copy is in pt-BR with mineiro slang — preserve the tone when editing strings.
 
+**Mobile-first.** The app is used in the bar, on a phone. Design, test, and verify UI changes at mobile viewport widths (~375–430px) first. Desktop is a nice-to-have, not the target.
+
 ## Architecture
 
 **No build step.** Vue 3, Tailwind, and `@supabase/supabase-js` are all loaded from CDNs in [index.html](index.html). To "develop," edit files and reload — there is no bundler, no `package.json`, no `node_modules`.
