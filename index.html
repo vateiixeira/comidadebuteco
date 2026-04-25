@@ -462,6 +462,17 @@
         </div>
       </div>
     </div>
+
+      <!-- =========================================================
+           TOAST
+           ========================================================= -->
+      <div
+        v-if="toast"
+        class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[60] px-6 py-4 border-2 border-[#1a1410] shadow-[4px_4px_0_#1a1410] animate-fadeIn font-handwritten text-xl max-w-[90vw] text-center"
+        :class="toast.tipo === 'erro' ? 'bg-[#c83c1f] text-[#fffaee]' : 'bg-[#f4b942] text-[#1a1410]'"
+      >
+        {{ toast.msg }}
+      </div>
   </div>
 
   <!-- ========================================================= -->

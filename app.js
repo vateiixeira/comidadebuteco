@@ -81,6 +81,9 @@ createApp({
     const erroFeed = ref('');
     const agregadosAvaliacoes = ref([]);
 
+    const toast = ref(null); // { msg, tipo } ou null
+    let toastTimer = null;
+
     // ----- computeds -----
     const stats = computed(() => {
       const visitados = Object.keys(ratings.value).length;
@@ -146,6 +149,12 @@ createApp({
     const telefoneFormatado = computed(() => formatarTelefone(telefoneInput.value));
 
     // ----- helpers -----
+    function mostrarToast(msg, tipo = 'sucesso') {
+      toast.value = { msg, tipo };
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { toast.value = null; }, 4000);
+    }
+
     function telefoneValido(t) {
       return /^\d{11}$/.test(t);
     }
@@ -386,6 +395,7 @@ createApp({
       notaInput, obsInput, carregandoModal,
       userLocation, obtendoLocal, erroLocal,
       feedAvaliacoes, carregandoFeed, erroFeed, agregadosAvaliacoes,
+      toast,
       // computed
       stats, lista, feedEnriquecido, mediasPorPrato, notaLabel, telefoneFormatado,
       // actions
