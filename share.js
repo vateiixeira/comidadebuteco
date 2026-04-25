@@ -345,13 +345,57 @@
     return canvas;
   }
 
+  function canvasParaBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('toBlob retornou null'));
+        },
+        'image/png'
+      );
+    });
+  }
+
+  function fazerDownload(blob, nomeArquivo) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nomeArquivo;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
   // Exporta no window pra uso pelo app.js
   window.CDB_SHARE = {
     _slugBoteco: slugBoteco,
     _wrapText: wrapText,
     _desenharCard: desenharCard,
-    async compartilharAvaliacao(_dados) {
-      throw new Error('not implemented yet');
+    async compartilharAvaliacao(dados) {
+      const canvas = await desenharCard(dados);
+      const blob = await canvasParaBlob(canvas);
+      const slug = slugBoteco(dados.boteco);
+      const nomeArquivo = `comida-di-buteco-${slug}.png`;
+      const file = new File([blob], nomeArquivo, { type: 'image/png' });
+
+      // Tenta share API primeiro
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file] });
+          return { metodo: 'share' };
+        } catch (e) {
+          // Usuário cancelou (AbortError) — não é erro, retorna sem dar share
+          if (e.name === 'AbortError') return { metodo: 'cancelado' };
+          // Outro erro: cai no fallback de download
+          console.warn('navigator.share falhou, fazendo download', e);
+        }
+      }
+
+      // Fallback: download
+      fazerDownload(blob, nomeArquivo);
+      return { metodo: 'download' };
     },
   };
 })();
