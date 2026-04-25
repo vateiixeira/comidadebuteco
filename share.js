@@ -212,8 +212,97 @@
     }
   }
 
+  function desenharObs(ctx, obs) {
+    // Fundo paper bg do bloco 1380-1620
+    ctx.fillStyle = '#f4ead5';
+    ctx.fillRect(0, 1380, 1080, 240);
+
+    // Aspas decorativas (Bungee 120 vermelho 30% opaco)
+    ctx.save();
+    ctx.fillStyle = 'rgba(200, 60, 31, 0.3)';
+    ctx.font = '120px Bungee';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText('"', 40, 1395);
+    ctx.textAlign = 'right';
+    ctx.fillText('"', 1040, 1480);
+    ctx.restore();
+
+    // Trunca obs em 120 chars
+    let texto = obs;
+    if (texto.length > 120) texto = texto.slice(0, 117).trimEnd() + '...';
+
+    // Texto da obs em Caveat 52 marrom escuro, centralizado no bloco
+    ctx.fillStyle = '#3d2f20';
+    ctx.font = '700 52px Caveat';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const linhas = wrapText(ctx, texto, 920);
+    const lineHeight = 60;
+    const limMax = 4;
+    const usadas = Math.min(linhas.length, limMax);
+    const yCentro = 1500; // meio do bloco (1380 + 240/2)
+    const yInicio = yCentro - ((usadas - 1) * lineHeight) / 2;
+    for (let i = 0; i < usadas; i++) {
+      ctx.fillText(linhas[i], 540, yInicio + i * lineHeight);
+    }
+  }
+
+  function desenharRodape(ctx, nome, yInicio) {
+    // Fundo preto do rodapé
+    ctx.fillStyle = '#1a1410';
+    ctx.fillRect(0, yInicio, 1080, 1920 - yInicio);
+
+    // Texto principal "@apelido jogou no comida di buteco moc"
+    ctx.fillStyle = '#f4b942';
+    ctx.font = '28px Bungee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const apelido = (nome || '').toLowerCase().replace(/\s+/g, '');
+    ctx.fillText(`@${apelido} JOGOU NO COMIDA DI BUTECO MOC`, 540, yInicio + 80);
+
+    // URL embaixo
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#fffaee';
+    ctx.font = '24px Bungee';
+    ctx.fillText('vateiixeira.github.io/comidadebuteco', 540, yInicio + 140);
+    ctx.restore();
+
+    // Selo ED. 2026 rotacionado +12deg no canto inferior direito
+    ctx.save();
+    ctx.translate(940, 1830);
+    ctx.rotate((12 * Math.PI) / 180);
+    // Fundo do selo (medir antes pra calcular tamanho)
+    ctx.font = '22px Bungee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Tracking visual: usar mesmo padrão do MINHA NOTA
+    const seloLabel = 'ED. 2026';
+    const espacamento = 4;
+    let larguraTexto = 0;
+    for (const ch of seloLabel) larguraTexto += ctx.measureText(ch).width + espacamento;
+    larguraTexto -= espacamento;
+    const padX = 24;
+    const padY = 12;
+    const altura = 22 + padY * 2;
+    const largura = larguraTexto + padX * 2;
+    ctx.fillStyle = '#f4b942';
+    ctx.fillRect(-largura / 2, -altura / 2, largura, altura);
+    // Texto
+    ctx.fillStyle = '#1a1410';
+    let x = -larguraTexto / 2;
+    for (const ch of seloLabel) {
+      const w = ctx.measureText(ch).width;
+      ctx.fillText(ch, x + w / 2, 0);
+      x += w + espacamento;
+    }
+    ctx.restore();
+  }
+
   async function desenharCard(dados) {
-    const { boteco, prato, foto, nota } = dados;
+    const { nome, boteco, prato, nota, obs, foto } = dados;
 
     // Garante que as fontes carregaram (timeout 2s)
     try {
@@ -244,6 +333,14 @@
     desenharFoto(ctx, img, prato);
     desenharBotecoEPrato(ctx, boteco, prato);
     desenharNota(ctx, nota);
+
+    const temObs = obs && obs.trim().length > 0;
+    if (temObs) {
+      desenharObs(ctx, obs.trim());
+      desenharRodape(ctx, nome, 1620);
+    } else {
+      desenharRodape(ctx, nome, 1380);
+    }
 
     return canvas;
   }
