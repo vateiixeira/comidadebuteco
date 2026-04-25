@@ -370,9 +370,6 @@
 
   // Exporta no window pra uso pelo app.js
   window.CDB_SHARE = {
-    _slugBoteco: slugBoteco,
-    _wrapText: wrapText,
-    _desenharCard: desenharCard,
     async compartilharAvaliacao(dados) {
       const canvas = await desenharCard(dados);
       const blob = await canvasParaBlob(canvas);
