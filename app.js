@@ -71,6 +71,7 @@ createApp({
     const notaInput = ref(0);
     const obsInput = ref('');
     const carregandoModal = ref(false);
+    const carregandoShare = ref(false);
 
     const userLocation = ref(null); // {lat, lng} ou null
     const obtendoLocal = ref(false);
@@ -363,6 +364,31 @@ createApp({
       carregandoModal.value = false;
     }
 
+    async function compartilharAvaliacaoAtual() {
+      if (!aberto.value || !ratings.value[aberto.value.id]) return;
+      const r = ratings.value[aberto.value.id];
+      const dish = aberto.value;
+      carregandoShare.value = true;
+      try {
+        const res = await window.CDB_SHARE.compartilharAvaliacao({
+          nome: user.value.nome,
+          boteco: dish.boteco,
+          prato: dish.prato,
+          nota: r.nota,
+          obs: r.obs,
+          foto: dish.foto,
+        });
+        if (res.metodo === 'download') {
+          mostrarToast('imagem salva! abre o insta e posta como story', 'sucesso');
+        }
+      } catch (e) {
+        console.error('compartilhar', e);
+        mostrarToast('deu ruim ao gerar a imagem', 'erro');
+      } finally {
+        carregandoShare.value = false;
+      }
+    }
+
     // ----- mount: tenta auto-login com telefone salvo no device -----
     onMounted(async () => {
       carregarAgregados();
@@ -392,7 +418,7 @@ createApp({
       // state
       user, ratings, filtro, aberto,
       telefoneInput, nomeInput, precisaNome, erroLogin, carregandoLogin, carregandoApp,
-      notaInput, obsInput, carregandoModal,
+      notaInput, obsInput, carregandoModal, carregandoShare,
       userLocation, obtendoLocal, erroLocal,
       feedAvaliacoes, carregandoFeed, erroFeed, agregadosAvaliacoes,
       toast,
@@ -400,7 +426,7 @@ createApp({
       stats, lista, feedEnriquecido, mediasPorPrato, notaLabel, telefoneFormatado,
       // actions
       handleLogin, handleLogout, handleTelefoneInput,
-      abrirModal, fecharModal, salvarRating, apagarRating,
+      abrirModal, fecharModal, salvarRating, apagarRating, compartilharAvaliacaoAtual,
       selecionarPerto,
       carregarFeed, selecionarGalera,
       // helpers expostos
