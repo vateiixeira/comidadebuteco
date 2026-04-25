@@ -77,10 +77,10 @@
     } else {
       // Fallback texto centralizado quando foto falha
       ctx.fillStyle = '#8b6f47';
-      ctx.font = '52px Caveat';
+      ctx.font = '700 52px Caveat';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText('foto indisponível', 540, 570);
+      ctx.fillText(`foto indisponível: ${prato}`, 540, 570);
     }
 
     // Gradiente preto no rodapé da foto (últimos 280px: 740-1020)
@@ -97,14 +97,14 @@
     ctx.font = '36px Bungee';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText(boteco, 60, 920);
+    ctx.fillText(boteco, 60, 900);
 
     // Nome do prato em Caveat 84 amarelo, rotacionado -1deg
     ctx.save();
-    ctx.translate(60, 1000);
+    ctx.translate(60, 975);
     ctx.rotate(-Math.PI / 180); // -1 grau
     ctx.fillStyle = '#f4b942';
-    ctx.font = '84px Caveat';
+    ctx.font = '700 84px Caveat';
     ctx.textBaseline = 'alphabetic';
 
     const linhas = wrapText(ctx, prato, 960);
