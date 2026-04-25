@@ -3,6 +3,8 @@
 // =====================================================================
 
 (function () {
+  const NOTA_LABELS_SHARE = ['', 'fugiu...', 'meia boca', 'mais ou menos', 'muito bom!', 'trem da gota!'];
+
   // ----- helpers -----
 
   function slugBoteco(nome) {
@@ -29,6 +31,39 @@
     }
     if (atual) linhas.push(atual);
     return linhas;
+  }
+
+  function drawStar(ctx, cx, cy, size, fill, stroke) {
+    // Pontos do mesmo SVG das estrelas no app (viewBox 0 0 24 24)
+    const points = [
+      [12, 2], [15.09, 8.26], [22, 9.27], [17, 14.14], [18.18, 21.02],
+      [12, 17.77], [5.82, 21.02], [7, 14.14], [2, 9.27], [8.91, 8.26]
+    ];
+    const scale = size / 24;
+    const ox = cx - size / 2;
+    const oy = cy - size / 2;
+
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+      const [x, y] = points[i];
+      const px = ox + x * scale;
+      const py = oy + y * scale;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = Math.max(2, scale * 2);
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    }
   }
 
   function carregarImagem(url) {
@@ -114,8 +149,71 @@
     ctx.restore();
   }
 
+  function desenharNota(ctx, nota) {
+    // Fundo creme do bloco 1020-1380
+    ctx.fillStyle = '#fffaee';
+    ctx.fillRect(0, 1020, 1080, 360);
+
+    // Borda inferior tracejada (2px com gap de 8px)
+    ctx.save();
+    ctx.strokeStyle = '#8b6f47';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([16, 8]);
+    ctx.beginPath();
+    ctx.moveTo(60, 1378);
+    ctx.lineTo(1020, 1378);
+    ctx.stroke();
+    ctx.restore();
+
+    // Label "MINHA NOTA"
+    ctx.fillStyle = '#5c4a2f';
+    ctx.font = '26px Bungee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Tracking 8px: desenha letra por letra
+    const label = 'MINHA NOTA';
+    const espacamento = 8;
+    let larguraTotal = 0;
+    for (const ch of label) larguraTotal += ctx.measureText(ch).width + espacamento;
+    larguraTotal -= espacamento;
+    let x = 540 - larguraTotal / 2;
+    for (const ch of label) {
+      const w = ctx.measureText(ch).width;
+      ctx.fillText(ch, x + w / 2, 1075);
+      x += w + espacamento;
+    }
+
+    // 5 estrelas, 110px cada, gap 12px, centradas em y=1185
+    const tamEstrela = 110;
+    const gap = 12;
+    const larguraEstrelas = 5 * tamEstrela + 4 * gap;
+    const inicioX = 540 - larguraEstrelas / 2;
+    for (let i = 0; i < 5; i++) {
+      const cx = inicioX + i * (tamEstrela + gap) + tamEstrela / 2;
+      if (nota >= i + 1) {
+        drawStar(ctx, cx, 1185, tamEstrela, '#f4b942', '#c4901f');
+      } else {
+        drawStar(ctx, cx, 1185, tamEstrela, null, '#8b6f47');
+      }
+    }
+
+    // Label da nota em Caveat rotacionado -1deg
+    const notaLabel = NOTA_LABELS_SHARE[nota] || '';
+    if (notaLabel) {
+      ctx.save();
+      ctx.translate(540, 1310);
+      ctx.rotate(-Math.PI / 180);
+      ctx.fillStyle = '#c83c1f';
+      ctx.font = '700 56px Caveat';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(notaLabel, 0, 0);
+      ctx.restore();
+    }
+  }
+
   async function desenharCard(dados) {
-    const { boteco, prato, foto } = dados;
+    const { boteco, prato, foto, nota } = dados;
 
     // Garante que as fontes carregaram (timeout 2s)
     try {
@@ -145,6 +243,7 @@
     const img = await carregarImagem(foto);
     desenharFoto(ctx, img, prato);
     desenharBotecoEPrato(ctx, boteco, prato);
+    desenharNota(ctx, nota);
 
     return canvas;
   }
