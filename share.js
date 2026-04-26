@@ -4,6 +4,7 @@
 
 (function () {
   const NOTA_LABELS_SHARE = ['', 'fugiu...', 'meia boca', 'mais ou menos', 'muito bom!', 'trem da gota!'];
+  const MESES_SHARE = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
   // ----- helpers -----
 
@@ -33,8 +34,29 @@
     return linhas;
   }
 
+  function formatarData(data) {
+    if (!data) return '';
+    const d = data instanceof Date ? data : new Date(data);
+    if (isNaN(d.getTime())) return '';
+    return `${d.getDate()} ${MESES_SHARE[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  function aplicarRuidoPapel(ctx, x, y, w, h) {
+    // Especks aleatórios pra textura sutil de papel
+    const original = ctx.fillStyle;
+    const numEspecks = Math.floor((w * h) / 600);
+    for (let i = 0; i < numEspecks; i++) {
+      const px = x + Math.random() * w;
+      const py = y + Math.random() * h;
+      const size = Math.random() * 1.2 + 0.4;
+      const alpha = Math.random() * 0.13;
+      ctx.fillStyle = `rgba(80, 50, 30, ${alpha})`;
+      ctx.fillRect(px, py, size, size);
+    }
+    ctx.fillStyle = original;
+  }
+
   function drawStar(ctx, cx, cy, size, fill, stroke) {
-    // Pontos do mesmo SVG das estrelas no app (viewBox 0 0 24 24)
     const points = [
       [12, 2], [15.09, 8.26], [22, 9.27], [17, 14.14], [18.18, 21.02],
       [12, 17.77], [5.82, 21.02], [7, 14.14], [2, 9.27], [8.91, 8.26]
@@ -75,221 +97,90 @@
     });
   }
 
-  function desenharBranding(ctx) {
-    // Faixa vermelha 0-120
-    ctx.fillStyle = '#c83c1f';
-    ctx.fillRect(0, 0, 1080, 120);
+  function desenharComTracking(ctx, texto, cx, cy, espacamento) {
+    let largura = 0;
+    for (const ch of texto) largura += ctx.measureText(ch).width + espacamento;
+    largura -= espacamento;
+    let x = cx - largura / 2;
+    for (const ch of texto) {
+      const w = ctx.measureText(ch).width;
+      ctx.fillText(ch, x + w / 2, cy);
+      x += w + espacamento;
+    }
+  }
 
-    // Texto centralizado
+  function desenharBranding(ctx) {
+    // Faixa vermelha 0-75
+    ctx.fillStyle = '#c83c1f';
+    ctx.fillRect(0, 0, 810, 75);
+
     ctx.fillStyle = '#fffaee';
-    ctx.font = '32px Bungee';
+    ctx.font = '22px Bungee';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Tracking visual: usar letter spacing manual via espaços extra ou
-    // desenhar caractere por caractere. Simplificação: texto direto.
-    ctx.fillText('COMIDA DI BUTECO • MOC 2026', 540, 60);
+    desenharComTracking(ctx, 'COMIDA DI BUTECO • MOC 2026', 405, 38, 3);
   }
 
   function desenharFoto(ctx, img, prato) {
-    // Background da área caso a foto não cubra
     ctx.fillStyle = '#1a1410';
-    ctx.fillRect(0, 120, 1080, 900);
+    ctx.fillRect(0, 75, 810, 795);
 
     if (img) {
-      // object-fit: cover dentro de 1080x900 começando em y=120
-      const scale = Math.max(1080 / img.width, 900 / img.height);
+      const scale = Math.max(810 / img.width, 795 / img.height);
       const drawW = img.width * scale;
       const drawH = img.height * scale;
-      const drawX = (1080 - drawW) / 2;
-      const drawY = 120 + (900 - drawH) / 2;
+      const drawX = (810 - drawW) / 2;
+      const drawY = 75 + (795 - drawH) / 2;
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(0, 120, 1080, 900);
+      ctx.rect(0, 75, 810, 795);
       ctx.clip();
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
       ctx.restore();
     } else {
-      // Fallback texto centralizado quando foto falha
       ctx.fillStyle = '#8b6f47';
-      ctx.font = '700 52px Caveat';
+      ctx.font = '700 38px Caveat';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(`foto indisponível: ${prato}`, 540, 570);
+      ctx.fillText(`foto indisponível: ${prato}`, 405, 472);
     }
 
-    // Gradiente preto no rodapé da foto (últimos 280px: 740-1020)
-    const grad = ctx.createLinearGradient(0, 740, 0, 1020);
+    // Gradiente preto no rodapé da foto pros nomes ficarem legíveis
+    const grad = ctx.createLinearGradient(0, 650, 0, 870);
     grad.addColorStop(0, 'rgba(0,0,0,0)');
     grad.addColorStop(1, 'rgba(0,0,0,0.85)');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 740, 1080, 280);
+    ctx.fillRect(0, 650, 810, 220);
   }
 
-  function desenharBotecoEPrato(ctx, boteco, prato) {
-    // Nome do boteco em Bungee 36 branco/creme
-    ctx.fillStyle = '#fffaee';
-    ctx.font = '36px Bungee';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText(boteco, 60, 900);
-
-    // Nome do prato em Caveat 84 amarelo, rotacionado -1deg
+  function desenharSeloEdicao(ctx, cx, cy) {
+    // Selo amarelo rotacionado +12 deg (no canto superior direito da foto)
     ctx.save();
-    ctx.translate(60, 975);
-    ctx.rotate(-Math.PI / 180); // -1 grau
-    ctx.fillStyle = '#f4b942';
-    ctx.font = '700 84px Caveat';
-    ctx.textBaseline = 'alphabetic';
-
-    const linhas = wrapText(ctx, prato, 960);
-    for (let i = 0; i < linhas.length && i < 2; i++) {
-      ctx.fillText(linhas[i], 0, i * 90);
-    }
-    ctx.restore();
-  }
-
-  function desenharNota(ctx, nota) {
-    // Fundo creme do bloco 1020-1380
-    ctx.fillStyle = '#fffaee';
-    ctx.fillRect(0, 1020, 1080, 360);
-
-    // Borda inferior tracejada (2px com gap de 8px)
-    ctx.save();
-    ctx.strokeStyle = '#8b6f47';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([16, 8]);
-    ctx.beginPath();
-    ctx.moveTo(60, 1378);
-    ctx.lineTo(1020, 1378);
-    ctx.stroke();
-    ctx.restore();
-
-    // Label "MINHA NOTA"
-    ctx.fillStyle = '#5c4a2f';
-    ctx.font = '26px Bungee';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    // Tracking 8px: desenha letra por letra
-    const label = 'MINHA NOTA';
-    const espacamento = 8;
-    let larguraTotal = 0;
-    for (const ch of label) larguraTotal += ctx.measureText(ch).width + espacamento;
-    larguraTotal -= espacamento;
-    let x = 540 - larguraTotal / 2;
-    for (const ch of label) {
-      const w = ctx.measureText(ch).width;
-      ctx.fillText(ch, x + w / 2, 1075);
-      x += w + espacamento;
-    }
-
-    // 5 estrelas, 110px cada, gap 12px, centradas em y=1185
-    const tamEstrela = 110;
-    const gap = 12;
-    const larguraEstrelas = 5 * tamEstrela + 4 * gap;
-    const inicioX = 540 - larguraEstrelas / 2;
-    for (let i = 0; i < 5; i++) {
-      const cx = inicioX + i * (tamEstrela + gap) + tamEstrela / 2;
-      if (nota >= i + 1) {
-        drawStar(ctx, cx, 1185, tamEstrela, '#f4b942', '#c4901f');
-      } else {
-        drawStar(ctx, cx, 1185, tamEstrela, null, '#8b6f47');
-      }
-    }
-
-    // Label da nota em Caveat rotacionado -1deg
-    const notaLabel = NOTA_LABELS_SHARE[nota] || '';
-    if (notaLabel) {
-      ctx.save();
-      ctx.translate(540, 1310);
-      ctx.rotate(-Math.PI / 180);
-      ctx.fillStyle = '#c83c1f';
-      ctx.font = '700 56px Caveat';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(notaLabel, 0, 0);
-      ctx.restore();
-    }
-  }
-
-  function desenharObs(ctx, obs) {
-    // Fundo paper bg do bloco 1380-1620
-    ctx.fillStyle = '#f4ead5';
-    ctx.fillRect(0, 1380, 1080, 240);
-
-    // Aspas decorativas (Bungee 120 vermelho 30% opaco)
-    ctx.save();
-    ctx.fillStyle = 'rgba(200, 60, 31, 0.3)';
-    ctx.font = '120px Bungee';
-    ctx.textBaseline = 'top';
-    ctx.textAlign = 'left';
-    ctx.fillText('"', 40, 1395);
-    ctx.textAlign = 'right';
-    ctx.fillText('"', 1040, 1480);
-    ctx.restore();
-
-    // Trunca obs em 120 chars
-    let texto = obs;
-    if (texto.length > 120) texto = texto.slice(0, 117).trimEnd() + '...';
-
-    // Texto da obs em Caveat 52 marrom escuro, centralizado no bloco
-    ctx.fillStyle = '#3d2f20';
-    ctx.font = '700 52px Caveat';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    const linhas = wrapText(ctx, texto, 920);
-    const lineHeight = 60;
-    const limMax = 4;
-    const usadas = Math.min(linhas.length, limMax);
-    const yCentro = 1500; // meio do bloco (1380 + 240/2)
-    const yInicio = yCentro - ((usadas - 1) * lineHeight) / 2;
-    for (let i = 0; i < usadas; i++) {
-      ctx.fillText(linhas[i], 540, yInicio + i * lineHeight);
-    }
-  }
-
-  function desenharRodape(ctx, nome, yInicio) {
-    // Fundo preto do rodapé
-    ctx.fillStyle = '#1a1410';
-    ctx.fillRect(0, yInicio, 1080, 1920 - yInicio);
-
-    // Texto principal "@apelido jogou no comida di buteco moc"
-    ctx.fillStyle = '#f4b942';
-    ctx.font = '28px Bungee';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const apelido = (nome || '').toLowerCase().replace(/\s+/g, '');
-    ctx.fillText(`@${apelido} JOGOU NO COMIDA DI BUTECO MOC`, 540, yInicio + 80);
-
-    // URL embaixo
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle = '#fffaee';
-    ctx.font = '24px Bungee';
-    ctx.fillText('vateiixeira.github.io/comidadebuteco', 540, yInicio + 140);
-    ctx.restore();
-
-    // Selo ED. 2026 rotacionado +12deg no canto inferior direito
-    ctx.save();
-    ctx.translate(940, 1830);
+    ctx.translate(cx, cy);
     ctx.rotate((12 * Math.PI) / 180);
-    // Fundo do selo (medir antes pra calcular tamanho)
-    ctx.font = '22px Bungee';
+    ctx.font = '18px Bungee';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Tracking visual: usar mesmo padrão do MINHA NOTA
     const seloLabel = 'ED. 2026';
-    const espacamento = 4;
+    const espacamento = 3;
     let larguraTexto = 0;
     for (const ch of seloLabel) larguraTexto += ctx.measureText(ch).width + espacamento;
     larguraTexto -= espacamento;
-    const padX = 24;
-    const padY = 12;
-    const altura = 22 + padY * 2;
+    const padX = 18;
+    const padY = 9;
+    const altura = 18 + padY * 2;
     const largura = larguraTexto + padX * 2;
+    // Sombra preta deslocada
+    ctx.fillStyle = '#1a1410';
+    ctx.fillRect(-largura / 2 + 4, -altura / 2 + 4, largura, altura);
+    // Selo amarelo
     ctx.fillStyle = '#f4b942';
     ctx.fillRect(-largura / 2, -altura / 2, largura, altura);
+    // Borda preta
+    ctx.strokeStyle = '#1a1410';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-largura / 2, -altura / 2, largura, altura);
     // Texto
     ctx.fillStyle = '#1a1410';
     let x = -larguraTexto / 2;
@@ -301,16 +192,181 @@
     ctx.restore();
   }
 
+  function desenharBotecoEPrato(ctx, boteco, prato) {
+    // Selo ED. 2026 no canto superior direito da foto
+    desenharSeloEdicao(ctx, 715, 130);
+
+    // Nome do boteco em Bungee 26 branco/creme
+    ctx.fillStyle = '#fffaee';
+    ctx.font = '26px Bungee';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillText(boteco, 45, 720);
+
+    // Nome do prato em Caveat 60 amarelo, rotacionado -1deg
+    ctx.save();
+    ctx.translate(45, 780);
+    ctx.rotate(-Math.PI / 180);
+    ctx.fillStyle = '#f4b942';
+    ctx.font = '700 60px Caveat';
+    ctx.textBaseline = 'alphabetic';
+
+    const linhas = wrapText(ctx, prato, 720);
+    for (let i = 0; i < linhas.length && i < 2; i++) {
+      ctx.fillText(linhas[i], 0, i * 65);
+    }
+    ctx.restore();
+  }
+
+  function desenharNota(ctx, nota, data) {
+    // Fundo creme 870-1140
+    ctx.fillStyle = '#fffaee';
+    ctx.fillRect(0, 870, 810, 270);
+
+    aplicarRuidoPapel(ctx, 0, 870, 810, 270);
+
+    // Borda inferior tracejada
+    ctx.save();
+    ctx.strokeStyle = '#8b6f47';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([12, 6]);
+    ctx.beginPath();
+    ctx.moveTo(45, 1138);
+    ctx.lineTo(765, 1138);
+    ctx.stroke();
+    ctx.restore();
+
+    // Label "MINHA NOTA"
+    ctx.fillStyle = '#5c4a2f';
+    ctx.font = '20px Bungee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    desenharComTracking(ctx, 'MINHA NOTA', 405, 895, 6);
+
+    // 5 estrelas, 140px cada, gap 9
+    const tamEstrela = 140;
+    const gap = 9;
+    const larguraEstrelas = 5 * tamEstrela + 4 * gap;
+    const inicioX = 405 - larguraEstrelas / 2;
+    for (let i = 0; i < 5; i++) {
+      const cx = inicioX + i * (tamEstrela + gap) + tamEstrela / 2;
+      if (nota >= i + 1) {
+        drawStar(ctx, cx, 1000, tamEstrela, '#f4b942', '#c4901f');
+      } else {
+        drawStar(ctx, cx, 1000, tamEstrela, null, '#8b6f47');
+      }
+    }
+
+    // Label da nota em Caveat rotacionado -1deg
+    const notaLabel = NOTA_LABELS_SHARE[nota] || '';
+    if (notaLabel) {
+      ctx.save();
+      ctx.translate(405, 1085);
+      ctx.rotate(-Math.PI / 180);
+      ctx.fillStyle = '#c83c1f';
+      ctx.font = '700 42px Caveat';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(notaLabel, 0, 0);
+      ctx.restore();
+    }
+
+    // Data em Caveat menor, rotacionado +1deg
+    const dataFormatada = formatarData(data);
+    if (dataFormatada) {
+      ctx.save();
+      ctx.translate(405, 1120);
+      ctx.rotate(Math.PI / 180);
+      ctx.fillStyle = '#8b6f47';
+      ctx.font = '700 22px Caveat';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(dataFormatada, 0, 0);
+      ctx.restore();
+    }
+  }
+
+  function desenharObs(ctx, obs) {
+    // Fundo paper bg 1140-1330
+    ctx.fillStyle = '#f4ead5';
+    ctx.fillRect(0, 1140, 810, 190);
+
+    aplicarRuidoPapel(ctx, 0, 1140, 810, 190);
+
+    // Aspas decorativas
+    ctx.save();
+    ctx.fillStyle = 'rgba(200, 60, 31, 0.3)';
+    ctx.font = '90px Bungee';
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'left';
+    ctx.fillText('"', 30, 1150);
+    ctx.textAlign = 'right';
+    ctx.fillText('"', 780, 1215);
+    ctx.restore();
+
+    // Trunca obs em ~100 chars
+    let texto = obs;
+    if (texto.length > 100) texto = texto.slice(0, 97).trimEnd() + '...';
+
+    // Texto da obs em Caveat 38
+    ctx.fillStyle = '#3d2f20';
+    ctx.font = '700 38px Caveat';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const linhas = wrapText(ctx, texto, 690);
+    const lineHeight = 44;
+    const limMax = 3;
+    const usadas = Math.min(linhas.length, limMax);
+    const yCentro = 1235;
+    const yInicio = yCentro - ((usadas - 1) * lineHeight) / 2;
+    for (let i = 0; i < usadas; i++) {
+      ctx.fillText(linhas[i], 405, yInicio + i * lineHeight);
+    }
+  }
+
+  function desenharAreaSemObs(ctx) {
+    // Quando não tem obs, paper bg liso entre rating e footer
+    ctx.fillStyle = '#f4ead5';
+    ctx.fillRect(0, 1140, 810, 190);
+    aplicarRuidoPapel(ctx, 0, 1140, 810, 190);
+  }
+
+  function desenharRodape(ctx, nome) {
+    // Fundo preto 1330-1440 (110px tall — bem mais enxuto)
+    ctx.fillStyle = '#1a1410';
+    ctx.fillRect(0, 1330, 810, 110);
+
+    const apelido = (nome || '').toLowerCase().replace(/\s+/g, '');
+
+    // "@apelido esteve aqui!" em Caveat handwritten
+    ctx.fillStyle = '#f4b942';
+    ctx.font = '700 32px Caveat';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`@${apelido} esteve aqui!`, 405, 1370);
+
+    // URL embaixo, pequena
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = '#fffaee';
+    ctx.font = '13px Bungee';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('vateiixeira.github.io/comidadebuteco', 405, 1408);
+    ctx.restore();
+  }
+
   async function desenharCard(dados) {
-    const { nome, boteco, prato, nota, obs, foto } = dados;
+    const { nome, boteco, prato, nota, obs, foto, data } = dados;
 
     // Garante que as fontes carregaram (timeout 2s)
     try {
       await Promise.race([
         Promise.all([
-          document.fonts.load('700 84px Caveat'),
-          document.fonts.load('400 32px Bungee'),
-          document.fonts.load('400 24px Lora'),
+          document.fonts.load('700 60px Caveat'),
+          document.fonts.load('400 26px Bungee'),
+          document.fonts.load('400 22px Lora'),
         ]),
         new Promise((resolve) => setTimeout(resolve, 2000)),
       ]);
@@ -319,28 +375,30 @@
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = 1080;
-    canvas.height = 1920;
+    canvas.width = 810;
+    canvas.height = 1440;
     const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingQuality = 'high';
 
-    // Background paper geral (será sobrescrito pelas seções)
+    // Background paper geral
     ctx.fillStyle = '#f4ead5';
-    ctx.fillRect(0, 0, 1080, 1920);
+    ctx.fillRect(0, 0, 810, 1440);
 
     desenharBranding(ctx);
 
     const img = await carregarImagem(foto);
     desenharFoto(ctx, img, prato);
     desenharBotecoEPrato(ctx, boteco, prato);
-    desenharNota(ctx, nota);
+    desenharNota(ctx, nota, data);
 
     const temObs = obs && obs.trim().length > 0;
     if (temObs) {
       desenharObs(ctx, obs.trim());
-      desenharRodape(ctx, nome, 1620);
     } else {
-      desenharRodape(ctx, nome, 1380);
+      desenharAreaSemObs(ctx);
     }
+
+    desenharRodape(ctx, nome);
 
     return canvas;
   }
@@ -368,7 +426,6 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  // Exporta no window pra uso pelo app.js
   window.CDB_SHARE = {
     async compartilharAvaliacao(dados) {
       const canvas = await desenharCard(dados);
@@ -377,20 +434,16 @@
       const nomeArquivo = `comida-di-buteco-${slug}.png`;
       const file = new File([blob], nomeArquivo, { type: 'image/png' });
 
-      // Tenta share API primeiro
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({ files: [file] });
           return { metodo: 'share' };
         } catch (e) {
-          // Usuário cancelou (AbortError) — não é erro, retorna sem dar share
           if (e.name === 'AbortError') return { metodo: 'cancelado' };
-          // Outro erro: cai no fallback de download
           console.warn('navigator.share falhou, fazendo download', e);
         }
       }
 
-      // Fallback: download
       fazerDownload(blob, nomeArquivo);
       return { metodo: 'download' };
     },

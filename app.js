@@ -377,6 +377,7 @@ createApp({
           nota: r.nota,
           obs: r.obs,
           foto: dish.foto,
+          data: r.atualizado_em,
         });
         if (res.metodo === 'download') {
           mostrarToast('imagem salva! abre o insta e posta como story', 'sucesso');
