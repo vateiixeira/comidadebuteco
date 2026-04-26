@@ -340,8 +340,8 @@ createApp({
         return;
       }
       ratings.value = { ...ratings.value, [aberto.value.id]: data };
-      fecharModal();
       carregandoModal.value = false;
+      mostrarToast('salvo no caderninho!');
     }
 
     async function apagarRating() {
